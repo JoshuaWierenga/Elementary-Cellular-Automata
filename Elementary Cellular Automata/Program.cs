@@ -80,6 +80,7 @@ namespace Elementary_Cellular_Automata
 
             var option = GetOptionInput("Select Intitial Row", options, true);
 
+            //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
             {
                 case "Single Top Left":
@@ -93,6 +94,10 @@ namespace Elementary_Cellular_Automata
                     SeedData[IterationWidth - 1] = true;
                     break;
                 case "Custom Row":
+                    for (var i = 0; i < IterationWidth; i++)
+                    {
+                        SeedData[i] = GetBinaryInput("State of position " + i);
+                    }
                     break;
             }
 
