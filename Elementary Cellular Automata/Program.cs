@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 
 namespace Elementary_Cellular_Automata
 {
@@ -6,7 +7,6 @@ namespace Elementary_Cellular_Automata
     {
         //Number of times to run CA
         private const int Iterations = 10;
-        //TODO Allow user to input rule
         //Rule  determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
@@ -15,17 +15,9 @@ namespace Elementary_Cellular_Automata
 
         private static CellularAutomata _ca;
 
-        static void Main(string[] args)
+        private static void Main()
         {
-            //Rule 110
-            Rule[0] = false;
-            Rule[1] = true;
-            Rule[2] = true;
-            Rule[3] = false;
-            Rule[4] = true;
-            Rule[5] = true;
-            Rule[6] = true;
-            Rule[7] = false;
+            GetRule();
 
             for (int i = 0; i < 10; i++)
             {
@@ -33,6 +25,98 @@ namespace Elementary_Cellular_Automata
             }
 
             _ca = new CellularAutomata(Iterations, Rule, SeedData);
+        }
+
+        //Gets rule from user
+        private static void GetRule()
+        {
+            string[] options = {
+                "Rule 102",
+                "Rule 110",
+                "Manual Rule"
+            };
+
+            var option = GetOptionInput("Select Rule", options, true);
+
+            //Uses option name so that adding more options or reordering options doesn't affect option detection
+            switch (options[option])
+            {
+                case "Rule 102":
+                    Rule[0] = false;
+                    Rule[1] = true;
+                    Rule[2] = true;
+                    Rule[3] = false;
+                    Rule[4] = false;
+                    Rule[5] = true;
+                    Rule[6] = true;
+                    Rule[7] = false;
+                    break;
+                case "Rule 110":
+                    Rule[0] = false;
+                    Rule[1] = true;
+                    Rule[2] = true;
+                    Rule[3] = true;
+                    Rule[4] = false;
+                    Rule[5] = true;
+                    Rule[6] = true;
+                    Rule[7] = false;
+                    break;
+                case "Manual Rule":
+                    for (int i = 0; i < Rule.Length; i++)
+                    {
+                        //Gets output for specific inputs, inputs are found by converting i to a 3 digit binary number
+                        Rule[i] = GetBinaryInput("Output for \"" + Convert.ToString(i, 2).PadLeft(3, '0') + '\"');
+                    }
+                    break;
+            }
+        }
+
+        //Displays options to user and returns number of option selected
+        private static uint GetOptionInput(string request, string[] options, bool allowClear = false)
+        {
+            while (true)
+            {
+                if (allowClear)
+                {
+                    Console.Clear();
+                }
+
+                Console.WriteLine(request + ":");
+
+                for (var i = 1; i <= options.Length; i++)
+                {
+                    var option = options[i - 1];
+                    Console.WriteLine(i + " : " + option);
+                }
+
+                uint.TryParse(Console.ReadLine(), out var input);
+                //options 0 to options.length - 1 are displayed as 1 to options.length so 1 needs to be removed to line up with options
+                //if the number is 0 then it underflows and is not in range and so will repeat just like if input > options.length - 1
+                if (input - 1 < options.Length)
+                {
+                    return input - 1;
+                }
+            }
+        }
+
+        //Displays request to user and returns user input of 0 or 1
+        private static bool GetBinaryInput(string request, bool allowClear = false)
+        {
+            while (true)
+            {
+                if (allowClear)
+                {
+                    Console.Clear(); 
+                }
+
+                Console.Write(request + ": ");
+
+                int.TryParse(Console.ReadLine(), out var input);
+                if (input == 0 || input == 1)
+                {
+                    return Convert.ToBoolean(input);
+                }
+            }
         }
     }
 }
