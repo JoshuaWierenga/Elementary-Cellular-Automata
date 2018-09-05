@@ -9,7 +9,7 @@ namespace Elementary_Cellular_Automata
     {
         public uint RowCount { get; }
         public uint ColumnCount { get; }
-        private readonly byte[] Data;
+        private byte[] Data { get; }
 
         //Only accepts uints as matrix can only have positive lengths
         public BitMatrix(uint rowCount, uint columnCount)
@@ -76,7 +76,7 @@ namespace Elementary_Cellular_Automata
                 // (x, y) = (x * xLength + y)
                 uint pos = rowIndex * ColumnCount + columnIndex;
 
-                //Finds offset from end of byte byte
+                //Finds offset from end of byte
                 int offset = (int)pos % 8;
                 //Divides position by 8 to get which byte the bit is in
                 pos >>= 3;

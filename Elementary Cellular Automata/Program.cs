@@ -7,24 +7,21 @@ namespace Elementary_Cellular_Automata
     {
         //Number of times to run CA
         private const int Iterations = 10;
-        //Rule  determines the output for each 3 digit binary number where the least significant bit decides
+        //Width of each iteration, MUST BE ODD
+        private const int IterationWidth = 11;
+        //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
-        //TODO Allow user to input seed
-        private static readonly BitArray SeedData = new BitArray(10);
-
+        //Intial Row
+        private static readonly BitArray SeedData = new BitArray(IterationWidth);
         private static CellularAutomata _ca;
 
         private static void Main()
         {
             GetRule();
+            GetSeedData();
 
-            for (int i = 0; i < 10; i++)
-            {
-                SeedData[i] = i == 9;
-            }
-
-            _ca = new CellularAutomata(Iterations, Rule, SeedData);
+            _ca = new CellularAutomata(Iterations, IterationWidth, Rule, SeedData);
         }
 
         //Gets rule from user
@@ -69,6 +66,36 @@ namespace Elementary_Cellular_Automata
                     }
                     break;
             }
+        }
+
+        //Gets seed from user
+        private static void GetSeedData()
+        {
+            string[] options = {
+                "Single Top Left",
+                "Single Top Middle",
+                "Single Top Right",
+                "Custom Row"
+            };
+
+            var option = GetOptionInput("Select Intitial Row", options, true);
+
+            switch (options[option])
+            {
+                case "Single Top Left":
+                    SeedData[0] = true;
+                    break;
+                case "Single Top Middle":
+                    //Width / 2 will give one below middle but SeedData starts at 0 so middle is one lower
+                    SeedData[IterationWidth / 2] = true;
+                    break;
+                case "Single Top Right":
+                    SeedData[IterationWidth - 1] = true;
+                    break;
+                case "Custom Row":
+                    break;
+            }
+
         }
 
         //Displays options to user and returns number of option selected
