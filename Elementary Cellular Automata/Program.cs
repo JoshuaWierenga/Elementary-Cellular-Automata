@@ -13,6 +13,9 @@ namespace Elementary_Cellular_Automata
         //Width of each iteration, MUST BE ODD
         private static int _iterationWidth;
 
+        //Time between each draw
+        private static int _drawSpeed;
+
         //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
@@ -29,6 +32,7 @@ namespace Elementary_Cellular_Automata
             GetScreenWidth();
             _seedData = new BitArray(_iterationWidth);
             GetSeedData();
+            GetSpeed();
 
             _ca = new CellularAutomata(Iterations, (uint)_iterationWidth, Rule, _seedData);
 
@@ -40,7 +44,7 @@ namespace Elementary_Cellular_Automata
                 {
                     //Sleep between each draw to prevent screen glitching when too many new lines
                     //as well as making output slow enough to be understood
-                    Thread.Sleep(100);
+                    Thread.Sleep(_drawSpeed);
                     _ca.DisplayRow();
                 }
 
@@ -165,6 +169,45 @@ namespace Elementary_Cellular_Automata
                     {
                         _seedData[i] = GetBinaryInput("State of position " + i);
                     }
+                    break;
+            }
+        }
+
+        //Gets speed from user, speed controls time between draws
+        private static void GetSpeed()
+        {
+            string[] options =
+            {
+                "Very Fast (25ms)",
+                "Fast (50ms)",
+                "Medium (100ms)",
+                "Slow (150ms)",
+                "Very Slow (200ms)"
+            };
+
+            uint option = GetOptionInput("Select Draw Speed", options, true);
+
+            //Uses option name so that adding more options or reordering options doesn't affect option detection
+            switch (options[option])
+            {
+                case "Very Fast (25ms)":
+                    _drawSpeed = 25;
+                    break;
+
+                case "Fast (50ms)":
+                    _drawSpeed = 50;
+                    break;
+
+                case "Medium (100ms)":
+                    _drawSpeed = 100;
+                    break;
+
+                case "Slow (150ms)":
+                    _drawSpeed = 100;
+                    break;
+
+                case "Very Slow (200ms)":
+                    _drawSpeed = 200;
                     break;
             }
         }
