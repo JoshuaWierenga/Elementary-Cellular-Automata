@@ -11,36 +11,58 @@ namespace Elementary_Cellular_Automata
         private const int Iterations = 1000000;
 
         //Width of each iteration, MUST BE ODD
-        private const int IterationWidth = 101;
+        private static int _iterationWidth;
 
         //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
 
         //Intial Row
-        private static readonly BitArray SeedData = new BitArray(IterationWidth);
+        private static BitArray _seedData;
 
         private static CellularAutomata _ca;
 
         private static void Main()
         {
             GetRule();
+            //Get console width after rule to allow time for the console to be correctly sized
+            GetScreenWidth();
+            _seedData = new BitArray(_iterationWidth);
             GetSeedData();
 
-            _ca = new CellularAutomata(Iterations, IterationWidth, Rule, SeedData);
+            _ca = new CellularAutomata(Iterations, (uint)_iterationWidth, Rule, _seedData);
 
             CellularAutomata.SetupConsole();
 
-            for (var i = 0; i < Iterations; i++)
+            for (int i = 0; i < Iterations; i++)
             {
                 if (i % 2 == 1)
                 {
                     //Sleep between each draw to prevent screen glitching when too many new lines
-                    Thread.Sleep(150);
+                    //as well as making output slow enough to be understood
+                    Thread.Sleep(100);
                     _ca.DisplayRow();
                 }
 
                 _ca.Iterate();
+            }
+        }
+
+        //Find maximum data width for current console size
+        private static void GetScreenWidth()
+        {
+            int screenWidth = Console.WindowWidth;
+            //Check if width is odd
+            if (screenWidth % 2 == 1)
+            {
+                //Trying to display rows at exact width when console width is odd often goes off the edge of the screen
+                //removing 2 solves this while keeping the number odd
+                _iterationWidth = screenWidth - 2;
+            }
+            else
+            {
+                //For there to be a single middle position the number of positions must be odd
+                _iterationWidth = screenWidth - 1;
             }
         }
 
@@ -80,18 +102,18 @@ namespace Elementary_Cellular_Automata
                     Rule[6] = true;
                     Rule[7] = false;
                     break;
-                //Allows entrying rule as a decimal number
+                //Allows entering rule as a decimal number
                 case "Manual Rule Decimal":
                     Console.Write("Rule: ");
                     while (true)
                     {
                         string input = Console.ReadLine();
-                        if (!uint.TryParse(input, out var inputNum) || inputNum >= 255) continue;
+                        if (!uint.TryParse(input, out uint inputNum) || inputNum >= 255) continue;
 
                         //Convert input back to string but as bits then store each bit in rule array
                         //Inputs are padded to ensure they are all 8 bits long
                         string inputBits = Convert.ToString(inputNum, 2).PadLeft(Rule.Length, '0');
-                        for (var i = 0; i < inputBits.Length; i++)
+                        for (int i = 0; i < inputBits.Length; i++)
                         {
                             //Input is backwards to rule so store in reverse order
                             Rule[Rule.Length - i - 1] = inputBits[i] == '1';
@@ -101,7 +123,7 @@ namespace Elementary_Cellular_Automata
                     break;
                 //Allows entering rule as binary numbers
                 case "Manual Rule Binary":
-                    for (var i = 0; i < Rule.Length; i++)
+                    for (int i = 0; i < Rule.Length; i++)
                     {
                         //Gets output for specific inputs, inputs are found by converting i to a 3 digit binary number
                         Rule[i] = GetBinaryInput("Output for \"" + Convert.ToString(i, 2).PadLeft(3, '0') + '\"');
@@ -120,28 +142,28 @@ namespace Elementary_Cellular_Automata
                 "Custom Row"
             };
 
-            uint option = GetOptionInput("Select Intitial Row", options, true);
+            uint option = GetOptionInput("Select Initial Row", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
             {
                 case "Single Top Left":
-                    SeedData[0] = true;
+                    _seedData[0] = true;
                     break;
 
                 case "Single Top Middle":
                     //Width / 2 will give one below middle but SeedData starts at 0 so middle is one lower
-                    SeedData[IterationWidth / 2] = true;
+                    _seedData[_iterationWidth / 2] = true;
                     break;
 
                 case "Single Top Right":
-                    SeedData[IterationWidth - 1] = true;
+                    _seedData[_iterationWidth - 1] = true;
                     break;
 
                 case "Custom Row":
-                    for (var i = 0; i < IterationWidth; i++)
+                    for (int i = 0; i < _iterationWidth; i++)
                     {
-                        SeedData[i] = GetBinaryInput("State of position " + i);
+                        _seedData[i] = GetBinaryInput("State of position " + i);
                     }
                     break;
             }
@@ -159,13 +181,13 @@ namespace Elementary_Cellular_Automata
 
                 Console.WriteLine(request + ":");
 
-                for (var i = 1; i <= options.Count; i++)
+                for (int i = 1; i <= options.Count; i++)
                 {
                     string option = options[i - 1];
                     Console.WriteLine(i + " : " + option);
                 }
 
-                uint.TryParse(Console.ReadLine(), out var input);
+                uint.TryParse(Console.ReadLine(), out uint input);
                 //options 0 to options.length - 1 are displayed as 1 to options.length so 1 needs to be removed to line up with options
                 //if the number is 0 then it underflows and is not in range and so will repeat just like if input > options.length - 1
                 if (input - 1 < options.Count)
@@ -187,7 +209,7 @@ namespace Elementary_Cellular_Automata
 
                 Console.Write(request + ": ");
 
-                int.TryParse(Console.ReadLine(), out var input);
+                int.TryParse(Console.ReadLine(), out int input);
                 if (input == 0 || input == 1)
                 {
                     return Convert.ToBoolean(input);

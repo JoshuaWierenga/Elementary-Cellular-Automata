@@ -17,9 +17,8 @@ namespace Elementary_Cellular_Automata
         public CellularAutomata(uint iterations, uint iterationWidth, BitArray rule, BitArray seedData)
         {
             Rule = rule;
-            //Todo determine width based on screen size
             Data = new BitMatrix(iterations + 1, iterationWidth);
-            for (var i = 0; i < seedData.Count; i++)
+            for (int i = 0; i < seedData.Count; i++)
             {
                 Data[0, (uint)i] = seedData[i];
             }
