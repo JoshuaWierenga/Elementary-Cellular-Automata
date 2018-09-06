@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 
 namespace Elementary_Cellular_Automata
 {
@@ -15,7 +16,7 @@ namespace Elementary_Cellular_Automata
         {
             Rule = rule;
             //Todo determine width based on screen size
-            Data = new BitMatrix(iterationWidth, iterations + 1);
+            Data = new BitMatrix(iterations + 1, iterationWidth);
             for (var i = 0; i < seedData.Count; i++)
             {
                 Data[0, (uint) i] = seedData[i];
@@ -24,6 +25,7 @@ namespace Elementary_Cellular_Automata
 
         public void Iterate()
         {
+            //First bit cannot change
             Data[_currentRow, 0] = Data[0, 0];
 
             for (uint i = 1; i < Data.ColumnCount - 1; i++)
@@ -74,9 +76,50 @@ namespace Elementary_Cellular_Automata
                 }
             }
 
-            Data[_currentRow, Data.ColumnCount] = Data[0, Data.ColumnCount];
+            //Last bit cannot 
+            Data[_currentRow + 1, Data.ColumnCount - 1] = Data[0, Data.ColumnCount - 1];
 
             _currentRow++;
+        }
+
+        //Draws a row and the the row before it as squares by using the unicode block elements
+        public void DisplayRow()
+        {
+            DisplayRow(_currentRow);
+        }
+
+        //Draws a row and the the row before it as squares by using the unicode block elements
+        public void DisplayRow(uint row)
+        {
+            for (uint i = 0; i < Data.ColumnCount; i++)
+            {
+                var b = Data[row - 1, i];
+                if (b)
+                {
+                    //if both the last row and this row are 1 at i then draw 2 stacked squares
+                    //else if just the top row then draw a square in the top half of the char
+                    var b1 = Data[row, i];
+                    Console.Write(b1 ? '█' : '▀');
+                }
+                else
+                {
+                    //if this row is 1 at i then draw a square in the bottom half of the char
+                    //else leave it black and just draw a space
+                    var b1 = Data[row, i];
+                    Console.Write(b1 ? '▄' : ' ');
+                }
+            }
+            
+            Console.WriteLine();
+        }
+
+        //Sets up console for displaying rows
+        public static void SetupConsole(ConsoleColor backgroundColour = ConsoleColor.White, ConsoleColor forgroundColour = ConsoleColor.Black)
+        {
+            Console.BackgroundColor = backgroundColour;
+            Console.ForegroundColor = forgroundColour;
+            Console.CursorVisible = false;
+            Console.Clear();
         }
     }
 }

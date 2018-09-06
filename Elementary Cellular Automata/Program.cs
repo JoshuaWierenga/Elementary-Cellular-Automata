@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections;
+using System.Threading;
 
 namespace Elementary_Cellular_Automata
 {
     internal static class Program
     {
         //Number of times to run CA
-        private const int Iterations = 10;
+        private const int Iterations = 1000000;
         //Width of each iteration, MUST BE ODD
-        private const int IterationWidth = 11;
+        private const int IterationWidth = 101;
         //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
@@ -22,6 +23,20 @@ namespace Elementary_Cellular_Automata
             GetSeedData();
 
             _ca = new CellularAutomata(Iterations, IterationWidth, Rule, SeedData);
+
+            CellularAutomata.SetupConsole();
+
+            for (var i = 0; i < Iterations; i++)
+            {
+                if (i % 2 == 1)
+                {
+                    //Sleep between each draw to prevent screen glitching when too many new lines
+                    Thread.Sleep(150);
+                    _ca.DisplayRow();
+                }
+               
+                _ca.Iterate();
+            }
         }
 
         //Gets rule from user
