@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Elementary_Cellular_Automata
@@ -8,13 +9,17 @@ namespace Elementary_Cellular_Automata
     {
         //Number of times to run CA
         private const int Iterations = 1000000;
+
         //Width of each iteration, MUST BE ODD
         private const int IterationWidth = 101;
+
         //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
         private static readonly BitArray Rule = new BitArray(8);
+
         //Intial Row
         private static readonly BitArray SeedData = new BitArray(IterationWidth);
+
         private static CellularAutomata _ca;
 
         private static void Main()
@@ -34,7 +39,7 @@ namespace Elementary_Cellular_Automata
                     Thread.Sleep(150);
                     _ca.DisplayRow();
                 }
-               
+
                 _ca.Iterate();
             }
         }
@@ -49,7 +54,7 @@ namespace Elementary_Cellular_Automata
                 "Manual Rule Binary"
             };
 
-            var option = GetOptionInput("Select Rule", options, true);
+            uint option = GetOptionInput("Select Rule", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
@@ -64,6 +69,7 @@ namespace Elementary_Cellular_Automata
                     Rule[6] = true;
                     Rule[7] = false;
                     break;
+
                 case "Rule 110":
                     Rule[0] = false;
                     Rule[1] = true;
@@ -79,12 +85,12 @@ namespace Elementary_Cellular_Automata
                     Console.Write("Rule: ");
                     while (true)
                     {
-                        var input = Console.ReadLine();
+                        string input = Console.ReadLine();
                         if (!uint.TryParse(input, out var inputNum) || inputNum >= 255) continue;
 
                         //Convert input back to string but as bits then store each bit in rule array
                         //Inputs are padded to ensure they are all 8 bits long
-                        var inputBits = Convert.ToString(inputNum, 2).PadLeft(Rule.Length, '0');
+                        string inputBits = Convert.ToString(inputNum, 2).PadLeft(Rule.Length, '0');
                         for (var i = 0; i < inputBits.Length; i++)
                         {
                             //Input is backwards to rule so store in reverse order
@@ -114,7 +120,7 @@ namespace Elementary_Cellular_Automata
                 "Custom Row"
             };
 
-            var option = GetOptionInput("Select Intitial Row", options, true);
+            uint option = GetOptionInput("Select Intitial Row", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
@@ -122,13 +128,16 @@ namespace Elementary_Cellular_Automata
                 case "Single Top Left":
                     SeedData[0] = true;
                     break;
+
                 case "Single Top Middle":
                     //Width / 2 will give one below middle but SeedData starts at 0 so middle is one lower
                     SeedData[IterationWidth / 2] = true;
                     break;
+
                 case "Single Top Right":
                     SeedData[IterationWidth - 1] = true;
                     break;
+
                 case "Custom Row":
                     for (var i = 0; i < IterationWidth; i++)
                     {
@@ -136,11 +145,10 @@ namespace Elementary_Cellular_Automata
                     }
                     break;
             }
-
         }
 
         //Displays options to user and returns number of option selected
-        private static uint GetOptionInput(string request, string[] options, bool allowClear = false)
+        private static uint GetOptionInput(string request, IReadOnlyList<string> options, bool allowClear = false)
         {
             while (true)
             {
@@ -151,16 +159,16 @@ namespace Elementary_Cellular_Automata
 
                 Console.WriteLine(request + ":");
 
-                for (var i = 1; i <= options.Length; i++)
+                for (var i = 1; i <= options.Count; i++)
                 {
-                    var option = options[i - 1];
+                    string option = options[i - 1];
                     Console.WriteLine(i + " : " + option);
                 }
 
                 uint.TryParse(Console.ReadLine(), out var input);
                 //options 0 to options.length - 1 are displayed as 1 to options.length so 1 needs to be removed to line up with options
                 //if the number is 0 then it underflows and is not in range and so will repeat just like if input > options.length - 1
-                if (input - 1 < options.Length)
+                if (input - 1 < options.Count)
                 {
                     return input - 1;
                 }
@@ -174,7 +182,7 @@ namespace Elementary_Cellular_Automata
             {
                 if (allowClear)
                 {
-                    Console.Clear(); 
+                    Console.Clear();
                 }
 
                 Console.Write(request + ": ");

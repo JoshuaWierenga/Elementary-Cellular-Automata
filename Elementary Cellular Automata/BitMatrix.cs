@@ -54,10 +54,7 @@ namespace Elementary_Cellular_Automata
                 pos >>= 3;
 
                 //Comparing the byte at pos to a 
-                byte b = Data[pos];
-                int i = 1 << offset;
-                int l = b & i;
-                return l != 0;
+                return (Data[pos] & 1 << offset) != 0;
             }
 
             set
@@ -80,7 +77,6 @@ namespace Elementary_Cellular_Automata
                 int offset = (int)pos % 8;
                 //Divides position by 8 to get which byte the bit is in
                 pos >>= 3;
-
 
                 //Switches bit at offset off if it is swiched on without modifiying other bits
                 Data[pos] &= (byte)~(1 << offset);
