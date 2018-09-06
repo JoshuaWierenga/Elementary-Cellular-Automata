@@ -45,7 +45,8 @@ namespace Elementary_Cellular_Automata
             string[] options = {
                 "Rule 102",
                 "Rule 110",
-                "Manual Rule"
+                "Manual Rule Decimal",
+                "Manual Rule Binary"
             };
 
             var option = GetOptionInput("Select Rule", options, true);
@@ -73,8 +74,28 @@ namespace Elementary_Cellular_Automata
                     Rule[6] = true;
                     Rule[7] = false;
                     break;
-                case "Manual Rule":
-                    for (int i = 0; i < Rule.Length; i++)
+                //Allows entrying rule as a decimal number
+                case "Manual Rule Decimal":
+                    Console.Write("Rule: ");
+                    while (true)
+                    {
+                        var input = Console.ReadLine();
+                        if (!uint.TryParse(input, out var inputNum) || inputNum >= 255) continue;
+
+                        //Convert input back to string but as bits then store each bit in rule array
+                        //Inputs are padded to ensure they are all 8 bits long
+                        var inputBits = Convert.ToString(inputNum, 2).PadLeft(Rule.Length, '0');
+                        for (var i = 0; i < inputBits.Length; i++)
+                        {
+                            //Input is backwards to rule so store in reverse order
+                            Rule[Rule.Length - i - 1] = inputBits[i] == '1';
+                        }
+                        break;
+                    }
+                    break;
+                //Allows entering rule as binary numbers
+                case "Manual Rule Binary":
+                    for (var i = 0; i < Rule.Length; i++)
                     {
                         //Gets output for specific inputs, inputs are found by converting i to a 3 digit binary number
                         Rule[i] = GetBinaryInput("Output for \"" + Convert.ToString(i, 2).PadLeft(3, '0') + '\"');
