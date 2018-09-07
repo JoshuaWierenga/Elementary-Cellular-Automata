@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Elementary_Cellular_Automata
@@ -25,14 +26,33 @@ namespace Elementary_Cellular_Automata
 
         private static CellularAutomata _ca;
 
-        private static void Main()
+        //Arguments should be entered as "rule seed [speed]", if no speed is entered then 100ms is used
+        //If no arguments are entered then program asks user from input
+        private static void Main(string[] input)
         {
-            GetRule();
-            //Get console width after rule to allow time for the console to be correctly sized
-            GetScreenWidth();
-            _seedData = new BitArray(_iterationWidth);
-            GetSeedData();
-            GetSpeed();
+            string rule = "";
+            string seed = "";
+            string speed = "";
+
+            //If input contains 2 or 3 items use them for rule, seed and speed
+            //used to automate setup
+            if (input.Length > 1 && input.Length < 4)
+            {
+                rule = input[0];
+                seed = input[1];
+                //Speed is an optional argument, defaults to 100ms otherwise
+                speed = input.Length == 3 ? input[2] : "100";
+            }
+
+            GetRule(rule);
+            //Only find screen width if seed has not be passed in, if one has then its width will be used
+            if (seed == "")
+            {
+                //Get console width after rule to allow time for the console to be correctly sized
+                GetScreenWidth();
+            }
+            GetSeedData(seed);
+            GetSpeed(speed);
 
             _ca = new CellularAutomata(Iterations, (uint)_iterationWidth, Rule, _seedData);
 
@@ -70,9 +90,31 @@ namespace Elementary_Cellular_Automata
             }
         }
 
-        //Gets rule from user
-        private static void GetRule()
+        //Gets rule from user or from optional argument
+        private static void GetRule(string rule = "")
         {
+            //Rule has been passed in
+            if (rule.Length != 0)
+            {
+                //Checks if string contain a positive integer and is smaller then max rule size
+                if (uint.TryParse(rule, out uint ruleInt) && ruleInt < Math.Pow(2, Rule.Length))
+                {
+                    rule = Convert.ToString(ruleInt, 2).PadLeft(Rule.Length);
+                }
+                //Checks if rule is not a binary number
+                else if (rule.Length != Rule.Length || !rule.All(b => b == '0' || b == '1'))
+                {
+                    throw new ArgumentException("Rule input is not an " + Rule.Length
+                                              + "bit binary number or a decimal number that represents one", nameof(rule));
+                }
+
+                for (int i = 0; i < Rule.Length; i++)
+                {
+                    Rule[Rule.Length - i - 1] = rule[i] == '1';
+                }
+                return;
+            }
+
             string[] options = {
                 "Rule 102",
                 "Rule 110",
@@ -80,7 +122,8 @@ namespace Elementary_Cellular_Automata
                 "Manual Rule Binary"
             };
 
-            uint option = GetOptionInput("Select Rule", options, true);
+            //request rule from user if rule has not been passed in
+            int option = GetOptionInput("Select Rule", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
@@ -136,9 +179,38 @@ namespace Elementary_Cellular_Automata
             }
         }
 
-        //Gets seed from user
-        private static void GetSeedData()
+        //Gets seed from user or from optional argument
+        private static void GetSeedData(string seed = "")
         {
+            //seed has been passed in
+            if (seed.Length != 0)
+            {
+                int maxWidth = Console.WindowWidth - 1;
+
+                //seed length must be smaller than screen width to prevent wrapping to next line
+                if (seed.Length > maxWidth)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(seed), "seed length must be smaller than screen width, " +
+                                                                        "current screen width is " + maxWidth);
+                }
+
+                if (!seed.All(b => b == '0' || b == '1'))
+                {
+                    throw new ArgumentException("seed contains invalid chars, seed must only contain binary numbers", nameof(seed));
+                }
+
+                //create array the size of the seed and add seed values
+                _iterationWidth = seed.Length;
+                _seedData = new BitArray(seed.Length);
+                for (int i = 0; i < _iterationWidth; i++)
+                {
+                    _seedData[i] = seed[i] == '1';
+                }
+                return;
+            }
+
+            _seedData = new BitArray(_iterationWidth);
+
             string[] options = {
                 "Single Top Left",
                 "Single Top Middle",
@@ -146,7 +218,8 @@ namespace Elementary_Cellular_Automata
                 "Custom Row"
             };
 
-            uint option = GetOptionInput("Select Initial Row", options, true);
+            //request seed from user if seed has not been passed in
+            int option = GetOptionInput("Select Initial Row", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
@@ -174,10 +247,22 @@ namespace Elementary_Cellular_Automata
         }
 
         //Gets speed from user, speed controls time between draws
-        private static void GetSpeed()
+        private static void GetSpeed(string speed = "")
         {
-            string[] options =
+            //speed has been passed in
+            if (speed.Length != 0)
             {
+                if (!int.TryParse(speed, out int speedInt) || speedInt < 1)
+                {
+                    throw new ArgumentException("Speed must be a positive integer", nameof(speed));
+                }
+
+                _drawSpeed = speedInt;
+                return;
+            }
+
+            string[] options =
+        {
                 "Very Fast (25ms)",
                 "Fast (50ms)",
                 "Medium (100ms)",
@@ -185,7 +270,8 @@ namespace Elementary_Cellular_Automata
                 "Very Slow (200ms)"
             };
 
-            uint option = GetOptionInput("Select Draw Speed", options, true);
+            //request speed from user if speed has not been passed in
+            int option = GetOptionInput("Select Draw Speed", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
@@ -213,7 +299,7 @@ namespace Elementary_Cellular_Automata
         }
 
         //Displays options to user and returns number of option selected
-        private static uint GetOptionInput(string request, IReadOnlyList<string> options, bool allowClear = false)
+        private static int GetOptionInput(string request, IReadOnlyList<string> options, bool allowClear = false)
         {
             while (true)
             {
@@ -230,10 +316,8 @@ namespace Elementary_Cellular_Automata
                     Console.WriteLine(i + " : " + option);
                 }
 
-                uint.TryParse(Console.ReadLine(), out uint input);
                 //options 0 to options.length - 1 are displayed as 1 to options.length so 1 needs to be removed to line up with options
-                //if the number is 0 then it underflows and is not in range and so will repeat just like if input > options.length - 1
-                if (input - 1 < options.Count)
+                if (int.TryParse(Console.ReadLine(), out int input) && input > 0 && input - 1 < options.Count)
                 {
                     return input - 1;
                 }
