@@ -26,33 +26,30 @@ namespace Elementary_Cellular_Automata
 
         private static CellularAutomata _ca;
 
-        //Arguments should be entered as "rule seed [speed]", if no speed is entered then 100ms is used
-        //If no arguments are entered then program asks user from input
+        //Arguments should be entered as --rule, --seed and --speed followed by input
+        //rule should be either a integer between 0 and 255 or an 8 digit binary number
+        //seed should be "left", "middle", "right" or a integer, speed should be a integer
+        //if only some inputs are entered, defaults are used, they are in order: 110, middle and 100
+        //if no arguments are entered then program asks user for input
         private static void Main(string[] input)
         {
-            string rule = "";
-            string seed = "";
-            string speed = "";
-
-            //If input contains 2 or 3 items use them for rule, seed and speed
-            //used to automate setup
-            if (input.Length > 1 && input.Length < 4)
+            if (input.Length != 0)
             {
-                rule = input[0];
-                seed = input[1];
-                //Speed is an optional argument, defaults to 100ms otherwise
-                speed = input.Length == 3 ? input[2] : "100";
+                (string rule, string seed, string speed) = ProcessArguments(input);
+                GetRule(rule);
+                GetSeedData(seed);
+                GetSpeed(speed);
             }
-
-            GetRule(rule);
-            //Only find screen width if seed has not be passed in, if one has then its width will be used
-            if (seed == "")
+            else
             {
-                //Get console width after rule to allow time for the console to be correctly sized
+                GetRule();
                 GetScreenWidth();
+                //Seed array is only instantiated if seed argument was not passed in or default is not being used
+                //if it is not instantiated here it will be in GetSeedData
+                _seedData = new BitArray(_iterationWidth);
+                GetSeedData();
+                GetSpeed();
             }
-            GetSeedData(seed);
-            GetSpeed(speed);
 
             _ca = new CellularAutomata(Iterations, (uint)_iterationWidth, Rule, _seedData);
 
@@ -70,6 +67,44 @@ namespace Elementary_Cellular_Automata
 
                 _ca.Iterate();
             }
+        }
+
+        //Split arguments into vars, includes defaults if some are not passed in
+        private static (string rule, string seed, string speed)
+            ProcessArguments(IReadOnlyList<string> arguments)
+        {
+            //Defaults, used if only some arguments are given
+            //Rule 110
+            string rule = "110";
+            //single cell in middle of screen
+            string seed = "middle";
+            //100ms
+            string speed = "100";
+
+            for (int i = 0; i < arguments.Count; i += 2)
+            {
+                string option = arguments[i];
+                string argument = arguments[i + 1];
+
+                //Sets var matching option to argument
+                //if var accepts letters then change to lowercase
+                switch (option)
+                {
+                    case "--rule":
+                        rule = argument;
+                        break;
+                    case "--seed":
+                        seed = argument.ToLower();
+                        break;
+                    case "--speed":
+                        speed = argument;
+                        break;
+                    default:
+                        throw new ArgumentException("Option is not valid", nameof(option));
+                }
+            }
+
+            return (rule, seed, speed);
         }
 
         //Find maximum data width for current console size
@@ -93,28 +128,6 @@ namespace Elementary_Cellular_Automata
         //Gets rule from user or from optional argument
         private static void GetRule(string rule = "")
         {
-            //Rule has been passed in
-            if (rule.Length != 0)
-            {
-                //Checks if string contain a positive integer and is smaller then max rule size
-                if (uint.TryParse(rule, out uint ruleInt) && ruleInt < Math.Pow(2, Rule.Length))
-                {
-                    rule = Convert.ToString(ruleInt, 2).PadLeft(Rule.Length);
-                }
-                //Checks if rule is not a binary number
-                else if (rule.Length != Rule.Length || !rule.All(b => b == '0' || b == '1'))
-                {
-                    throw new ArgumentException("Rule input is not an " + Rule.Length
-                                              + "bit binary number or a decimal number that represents one", nameof(rule));
-                }
-
-                for (int i = 0; i < Rule.Length; i++)
-                {
-                    Rule[Rule.Length - i - 1] = rule[i] == '1';
-                }
-                return;
-            }
-
             string[] options = {
                 "Rule 102",
                 "Rule 110",
@@ -122,11 +135,34 @@ namespace Elementary_Cellular_Automata
                 "Manual Rule Binary"
             };
 
-            //request rule from user if rule has not been passed in
-            int option = GetOptionInput("Select Rule", options, true);
+            string option;
 
-            //Uses option name so that adding more options or reordering options doesn't affect option detection
-            switch (options[option])
+            //Checks if input has been passed in
+            if (rule == "")
+            {
+                option = options[GetOptionInput("Select Rule", options, true)];
+            }
+            //Checks if input is not a number
+            else if (!int.TryParse(rule, out int ruleInt))
+            {
+                throw new ArgumentException("Rule must be a positive integer", nameof(rule));
+            }
+            //Checks if input is an decimal number
+            else if (ruleInt >= 0 && ruleInt < Math.Pow(2, Rule.Length))
+            {
+                option = "Manual Rule Decimal";
+            }
+            //Checks if input is a binary number
+            else if (rule.Length == 8 && rule.All(c => c == '0' || c == '1'))
+            {
+                option = "Manual Rule Binary";
+            }
+            else
+            {
+                throw new ArgumentException("Rule must be a positive integer", nameof(rule));
+            }
+
+            switch (option)
             {
                 case "Rule 102":
                     Rule[0] = false;
@@ -151,11 +187,19 @@ namespace Elementary_Cellular_Automata
                     break;
                 //Allows entering rule as a decimal number
                 case "Manual Rule Decimal":
-                    Console.Write("Rule: ");
+                    if (rule == "")
+                    {
+                        Console.Write("Rule: ");
+                    }
                     while (true)
                     {
-                        string input = Console.ReadLine();
-                        if (!uint.TryParse(input, out uint inputNum) || inputNum >= 255) continue;
+                        if (rule == "")
+                        {
+                            //Request rule from use if not passed in
+                            rule = Console.ReadLine();
+                        }
+
+                        if (!uint.TryParse(rule, out uint inputNum) || inputNum > 255) continue;
 
                         //Convert input back to string but as bits then store each bit in rule array
                         //Inputs are padded to ensure they are all 8 bits long
@@ -172,8 +216,10 @@ namespace Elementary_Cellular_Automata
                 case "Manual Rule Binary":
                     for (int i = 0; i < Rule.Length; i++)
                     {
-                        //Gets output for specific inputs, inputs are found by converting i to a 3 digit binary number
-                        Rule[i] = GetBinaryInput("Output for \"" + Convert.ToString(i, 2).PadLeft(3, '0') + '\"');
+                        //Checks if a rule was passed in, if so uses it otherwises asks user for rule bit
+                        Rule[i] = rule != ""
+                            ? rule[i] == '1'
+                            : GetBinaryInput("Output for \"" + Convert.ToString(i, 2).PadLeft(3, '0') + '\"');
                     }
                     break;
             }
@@ -182,35 +228,6 @@ namespace Elementary_Cellular_Automata
         //Gets seed from user or from optional argument
         private static void GetSeedData(string seed = "")
         {
-            //seed has been passed in
-            if (seed.Length != 0)
-            {
-                int maxWidth = Console.WindowWidth - 1;
-
-                //seed length must be smaller than screen width to prevent wrapping to next line
-                if (seed.Length > maxWidth)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(seed), "seed length must be smaller than screen width, " +
-                                                                        "current screen width is " + maxWidth);
-                }
-
-                if (!seed.All(b => b == '0' || b == '1'))
-                {
-                    throw new ArgumentException("seed contains invalid chars, seed must only contain binary numbers", nameof(seed));
-                }
-
-                //create array the size of the seed and add seed values
-                _iterationWidth = seed.Length;
-                _seedData = new BitArray(seed.Length);
-                for (int i = 0; i < _iterationWidth; i++)
-                {
-                    _seedData[i] = seed[i] == '1';
-                }
-                return;
-            }
-
-            _seedData = new BitArray(_iterationWidth);
-
             string[] options = {
                 "Single Top Left",
                 "Single Top Middle",
@@ -218,11 +235,48 @@ namespace Elementary_Cellular_Automata
                 "Custom Row"
             };
 
-            //request seed from user if seed has not been passed in
-            int option = GetOptionInput("Select Initial Row", options, true);
+            string option;
+
+            if (seed != "")
+            {
+                //Check if seed is word option
+                if (seed == "left" || seed == "middle" || seed == "right")
+                {
+                    //Was not run in main as arguments were given but word options need existing seed array  
+                    GetScreenWidth();
+                    _seedData = new BitArray(_iterationWidth);
+                    //Find only option that contains seed word
+                    option = options.First(o => o.ToLower().Contains(seed));
+                }
+                //Check if seed is in binary
+                else if (seed.All(c => c == '0' || c == '1'))
+                {
+                    int maxWidth = Console.WindowWidth - 1;
+
+                    //seed length must be smaller than screen width to prevent wrapping to next line
+                    if (seed.Length > maxWidth)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(seed), "Seed was out of range");
+                    }
+
+                    _iterationWidth = seed.Length;
+                    _seedData = new BitArray(seed.Length);
+                    option = "Custom Row";
+                }
+                else
+                {
+                    throw new ArgumentException("Seed must be a binary bumber", nameof(seed));
+
+                }
+            }
+            else
+            {
+                //request seed from user as seed has not been passed in
+                option = options[GetOptionInput("Select Initial Row", options, true)];
+            }
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
-            switch (options[option])
+            switch (option)
             {
                 case "Single Top Left":
                     _seedData[0] = true;
@@ -240,7 +294,10 @@ namespace Elementary_Cellular_Automata
                 case "Custom Row":
                     for (int i = 0; i < _iterationWidth; i++)
                     {
-                        _seedData[i] = GetBinaryInput("State of position " + i);
+                        //Checks if a seed was passed in, if so uses it otherwises askes user for seed
+                        _seedData[i] = seed != ""
+                            ? seed[i] == '1'
+                            : _seedData[i] = GetBinaryInput("State of position " + i);
                     }
                     break;
             }
@@ -249,10 +306,10 @@ namespace Elementary_Cellular_Automata
         //Gets speed from user, speed controls time between draws
         private static void GetSpeed(string speed = "")
         {
-            //speed has been passed in
+            //Checks if speed has been passed in
             if (speed.Length != 0)
             {
-                if (!int.TryParse(speed, out int speedInt) || speedInt < 1)
+                if (!int.TryParse(speed, out int speedInt) || speedInt < 0)
                 {
                     throw new ArgumentException("Speed must be a positive integer", nameof(speed));
                 }

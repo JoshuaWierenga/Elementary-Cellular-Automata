@@ -27,7 +27,7 @@ namespace Elementary_Cellular_Automata
         public void Iterate()
         {
             //First bit cannot change
-            Data[_currentRow, 0] = Data[0, 0];
+            Data[_currentRow + 1, 0] = Data[0, 0];  
 
             for (uint i = 1; i < Data.ColumnCount - 1; i++)
             {
@@ -94,13 +94,11 @@ namespace Elementary_Cellular_Automata
         {
             for (uint i = 0; i < Data.ColumnCount; i++)
             {
-                bool b = Data[row - 1, i];
-                if (b)
+                if (Data[row - 1, i])
                 {
                     //if both the last row and this row are 1 at i then draw 2 stacked squares
                     //else if just the top row then draw a square in the top half of the char
-                    bool b1 = Data[row, i];
-                    Console.Write(b1 ? '█' : '▀');
+                    Console.Write(Data[row, i] ? '█' : '▀');
                 }
                 else
                 {
