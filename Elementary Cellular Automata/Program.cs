@@ -15,7 +15,7 @@ namespace Elementary_Cellular_Automata
         private static int _iterationWidth;
 
         //Time between each draw
-        private static int _drawSpeed;
+        private static int _drawDelay;
 
         //Rule determines the output for each 3 digit binary number where the least significant bit decides
         //the output for 000 and the most significant bit decides the output for 111
@@ -26,19 +26,19 @@ namespace Elementary_Cellular_Automata
 
         private static CellularAutomata _ca;
 
-        //Arguments should be entered as --rule, --seed and --speed followed by input
+        //Arguments should be entered as --rule, --seed and --delay followed by input
         //rule should be either a integer between 0 and 255 or an 8 digit binary number
-        //seed should be "left", "middle", "right" or a integer, speed should be a integer
+        //seed should be "left", "middle", "right" or a integer, delay should be a integer
         //if only some inputs are entered, defaults are used, they are in order: 110, middle and 100
         //if no arguments are entered then program asks user for input
         private static void Main(string[] input)
         {
             if (input.Length != 0)
             {
-                (string rule, string seed, string speed) = ProcessArguments(input);
+                (string rule, string seed, string delay) = ProcessArguments(input);
                 GetRule(rule);
                 GetSeedData(seed);
-                GetSpeed(speed);
+                GetDelay(delay);
             }
             else
             {
@@ -48,7 +48,7 @@ namespace Elementary_Cellular_Automata
                 //if it is not instantiated here it will be in GetSeedData
                 _seedData = new BitArray(_iterationWidth);
                 GetSeedData();
-                GetSpeed();
+                GetDelay();
             }
 
             _ca = new CellularAutomata(Iterations, (uint)_iterationWidth, Rule, _seedData);
@@ -61,7 +61,7 @@ namespace Elementary_Cellular_Automata
                 {
                     //Sleep between each draw to prevent screen glitching when too many new lines
                     //as well as making output slow enough to be understood
-                    Thread.Sleep(_drawSpeed);
+                    Thread.Sleep(_drawDelay);
                     _ca.DisplayRow();
                 }
 
@@ -70,7 +70,7 @@ namespace Elementary_Cellular_Automata
         }
 
         //Split arguments into vars, includes defaults if some are not passed in
-        private static (string rule, string seed, string speed)
+        private static (string rule, string seed, string delay)
             ProcessArguments(IReadOnlyList<string> arguments)
         {
             //Defaults, used if only some arguments are given
@@ -79,7 +79,7 @@ namespace Elementary_Cellular_Automata
             //single cell in middle of screen
             string seed = "middle";
             //100ms
-            string speed = "100";
+            string delay = "100";
 
             for (int i = 0; i < arguments.Count; i += 2)
             {
@@ -96,15 +96,15 @@ namespace Elementary_Cellular_Automata
                     case "--seed":
                         seed = argument.ToLower();
                         break;
-                    case "--speed":
-                        speed = argument;
+                    case "--delay":
+                        delay = argument;
                         break;
                     default:
                         throw new ArgumentException("Option is not valid", nameof(option));
                 }
             }
 
-            return (rule, seed, speed);
+            return (rule, seed, delay);
         }
 
         //Find maximum data width for current console size
@@ -303,18 +303,18 @@ namespace Elementary_Cellular_Automata
             }
         }
 
-        //Gets speed from user, speed controls time between draws
-        private static void GetSpeed(string speed = "")
+        //Gets delay from user, delay controls time between draws
+        private static void GetDelay(string delay = "")
         {
-            //Checks if speed has been passed in
-            if (speed.Length != 0)
+            //Checks if delay has been passed in
+            if (delay.Length != 0)
             {
-                if (!int.TryParse(speed, out int speedInt) || speedInt < 0)
+                if (!int.TryParse(delay, out int delayInt) || delayInt < 0)
                 {
-                    throw new ArgumentException("Speed must be a positive integer", nameof(speed));
+                    throw new ArgumentException("Delay must be a positive integer", nameof(delay));
                 }
 
-                _drawSpeed = speedInt;
+                _drawDelay = delayInt;
                 return;
             }
 
@@ -327,30 +327,30 @@ namespace Elementary_Cellular_Automata
                 "Very Slow (200ms)"
             };
 
-            //request speed from user if speed has not been passed in
-            int option = GetOptionInput("Select Draw Speed", options, true);
+            //Request delay from user if delay has not been passed in
+            int option = GetOptionInput("Select Draw Delay", options, true);
 
             //Uses option name so that adding more options or reordering options doesn't affect option detection
             switch (options[option])
             {
                 case "Very Fast (25ms)":
-                    _drawSpeed = 25;
+                    _drawDelay = 25;
                     break;
 
                 case "Fast (50ms)":
-                    _drawSpeed = 50;
+                    _drawDelay = 50;
                     break;
 
                 case "Medium (100ms)":
-                    _drawSpeed = 100;
+                    _drawDelay = 100;
                     break;
 
                 case "Slow (150ms)":
-                    _drawSpeed = 100;
+                    _drawDelay = 100;
                     break;
 
                 case "Very Slow (200ms)":
-                    _drawSpeed = 200;
+                    _drawDelay = 200;
                     break;
             }
         }
